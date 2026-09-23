@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <meta name="theme-color" content="#FF8A5B" />
+  <title>拳拳成长记录</title>
+  <link rel="manifest" href="./manifest.webmanifest?v=15" />
+  <link rel="icon" href="./assets/icon.svg?v=15" />
+  <link rel="apple-touch-icon" href="./assets/icon.svg?v=15" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Baloo+2:wght@600;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css?v=15" />
+  <!-- 腾讯云 CloudBase Web SDK（已打包为单文件本地自托管，避免外部 CDN 失效导致云端静默回退本地）。云端模式（USE_CLOUD=true）初始化需要；本地演示模式不依赖。 -->
+  <script src="./vendor/cloudbase.js?v=15"></script>
+</head>
+<body>
+  <div class="deco d1">🦁</div>
+  <div class="deco d2">🌈</div>
+  <div class="deco d3">🍎</div>
+  <div class="deco d4">☁️</div>
+  <div class="deco d5">⭐</div>
+  <div id="app"><div class="card center"><p class="muted">加载中…</p></div></div>
+  <div id="toast" class="toast hidden"></div>
+  <script>
+    // Service Worker 版本检测与清理：如果当前控制页面的 SW 不是最新版，自动注销并刷新。
+    (function () {
+      if (!('serviceWorker' in navigator)) return;
+      const EXPECTED_CACHE = 'quanquan-v15';
+      navigator.serviceWorker.getRegistrations().then(function (regs) {
+        if (!regs.length) return;
+        const controller = navigator.serviceWorker.controller;
+        function cleanupAndReload() {
+          Promise.all(regs.map(function (r) { return r.unregister(); })).then(function () {
+            window.location.reload(true);
+          }).catch(function () {
+            window.location.reload(true);
+          });
+        }
+        if (!controller) {
+          // 有注册但没有 controller，直接清理确保重新注册新版
+          cleanupAndReload();
+          return;
+        }
+        var timeout = setTimeout(cleanupAndReload, 1200);
+        var chan = new MessageChannel();
+        chan.port1.onmessage = function (e) {
+          clearTimeout(timeout);
+          if (e.data && e.data.cache === EXPECTED_CACHE) return;
+          cleanupAndReload();
+        };
+        controller.postMessage({ type: 'GET_VERSION' }, [chan.port2]);
+      });
+    })();
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js?v=15')
+          .then((reg) => {
+            reg.addEventListener('updatefound', () => {
+              const newWorker = reg.installing;
+              if (!newWorker) return;
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  newWorker.postMessage({ type: 'SKIP_WAITING' });
+                }
+              });
+            });
+          })
+          .catch(() => {});
+        let refreshing = false;
+        // 关键防死循环：仅在「加载时已有旧 SW 控制」的页面上，被新 SW 接管才刷新。
+        // 首次访问（无 controller）时 SW 首次 claim 会触发 controllerchange，
+        // 此时页面本来就是新加载的，绝不能 reload——否则与平台间歇性 404/风控抖动
+        // 叠加会形成无限刷新死循环（2026-09-05 豆包/夸克异常的放大器，已修）。
+        const hadController = !!navigator.serviceWorker.controller;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (hadController && !refreshing) { refreshing = true; window.location.reload(); }
+        });
+      });
+    }
+  </script>
+  <script type="module" src="./js/app.js?v=15"></script>
+</body>
+</html>

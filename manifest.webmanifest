@@ -1,0 +1,19 @@
+{
+  "name": "拳拳成长记录",
+  "short_name": "拳拳",
+  "description": "记录拳拳的健康、日常与成长图册，全家多人协作。",
+  "start_url": "./index.html?v=15",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fef6ef",
+  "theme_color": "#e8743b",
+  "icons": [
+    {
+      "src": "./assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
